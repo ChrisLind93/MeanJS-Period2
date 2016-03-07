@@ -1,0 +1,141 @@
+1. Why would you consider a Scripting Language as JavaScript as your Backend Platform? 
+
+	For a long time, JavaScript was a front-end only language. Then Google came around with the V8 engine,
+	which allowed JavaScript to run much faster, due to the fact that V8 compiles JavaScript into native
+	machine code. This spawned the creation of things like Node JS, which allows the server side JavaScript.
+	Node.js is an open-source, cross-platform runtime invironment fore developing ser-side Web applications.
+	Although Node.js is not a Javascript framework, many of its basic modules are written in JavaScript,
+	and developers van write new modules in JavaScript.
+	Node.js uses an event-driven, non-blocking I/O model that makes it lightweight and efficient, perfect
+	for data-intensive real-time applications that run across distributed devices.
+
+--------------------------------------------------------------------------------------------------------------------
+
+2. Explain Pros & Cons in using Node.js + Express to implement your Backend compared to a strategy using for
+   example Java/JAX-RS/Tomcat.
+   
+	Node.JS is a single threaded non blocking server, which makes it super easy to perfom asynchronus calls. 
+	The genius thing about this is that Node.JS uses an event loop to make asynchronus calls, compared to a 
+	regular high level language like Java, or C#, which spawns new threads to do this. This makes Node.JS 
+	very memory efficient, and is also notoriously difficult to program. The data sent between Node.JS and 
+	and your frontend is already JSON so there is no need to convert it from either JSON to an object in an
+	high level language, or the other way around.
+
+--------------------------------------------------------------------------------------------------------------------
+
+3. Node.js uses a Single Threaded Non-blocking strategy to handle asynchronous task. Explain strategies to
+   implement a Node.js based server architecture that still could take advantage of a multi-core Server.
+
+	Node.JS can fire up child processes when the load gets big, meaning that you have multiple single threaded
+	tasks running. Node.JS already comes with this built in the Cluster module, which makes it able to spawn
+	multiple instances of a Node.JS threads and use a load balancer to ditribute the incoming request to a 
+	certain Node.JS thread.
+	Express also runs multiple virtual machines out of the box, so that way there is running multiple 
+	domains under one ip.
+	
+--------------------------------------------------------------------------------------------------------------------
+
+5. Explain, using relevant examples, the Express concept; middleware.
+
+	var app = express();
+
+	app.use(function (req, res, next) {         
+		console.log('Time:', Date.now());       
+		next();
+	});
+
+	app.get('/user/:id', function (req, res, next) {    
+		res.send('USER');                               
+	});
+
+--------------------------------------------------------------------------------------------------------------------
+
+7. Compare the express strategy toward (server side) templating with the one you used with Java on second semester.
+
+	On 2nd semester we used a technology called .jsp, which relies on java servlets to present the content
+	of a website. Express can do the same thing with a view-engine, here we can use either Jade, EJS or 
+	Handlebars. Express works a little bit different than .jsp and servlets, express does not compile the 
+	html that a client request's but acts a little like a SPA using AngularJS and a Rest-API. In express 
+	we send back the data that is to be shown on the page, but it is rendered client side.
+
+--------------------------------------------------------------------------------------------------------------------
+
+8. Explain, using relevant examples, your strategy for implementing a REST-API with Node/Express and show how 
+   you can "test" all the four CRUD operations programmatically using for example the Request package.
+
+
+--------------------------------------------------------------------------------------------------------------------
+
+9. Explain, using relevant examples, about testing JavaScript code, relevant packages (Mocha etc.) and how to test
+   asynchronous code.
+
+	function addAsync(n1,n2,callback){
+		setTimeout(function(){
+			var result = n1+n2;
+			callback(result);
+		},1000);
+	}
+
+
+	var expect = require("chai").expect;
+	var adder = require("../module");
+
+	describe("Test calculator", function() {
+
+		it("should return 10 asynchronouesly", function (done) {
+			adder.addAsync(5, 5, function (res) {
+				expect(res).to.be.equal(10);
+				done();
+			})
+		})
+	})
+
+--------------------------------------------------------------------------------------------------------------------
+
+10. Explain, using relevant examples, different ways to mock out databases, HTTP-request etc.
+
+//  I got this code from the example done during class
+	
+//  jokeModule.js
+	var request = require("request");
+	var URL = "http://jokes-plaul.rhcloud.com/api/joke";
+
+	function getJoke(callback) {
+		request(URL, function (error, response, body) {
+			if(error || response.statusCode >=400){
+				return callback(error || body );
+			}
+			callback(null,JSON.parse(body));
+		});
+	};
+
+	module.exports = {
+		getJoke: getJoke
+	}
+
+//  testJokeModule.js
+	var expect = require("chai").expect;
+	var jokes = require("../jokeModule");
+	var nock = require("nock");
+	var testJoke = {"id": 1234, "joke": "ha ha ha", "reference": "unknown"};
+
+	var n = nock('http://jokes-plaul.rhcloud.com');
+
+	describe('Joke API Get', function () {
+		before(function (done) {
+			n.get('/api/joke')
+				.reply(200,testJoke );
+			done();
+		});
+
+		it('Should fetch a joke', function (done) {
+			jokes.getJoke(function (err, joke) {
+				if (err) {
+					throw err;
+				}
+				expect(joke.reference).to.be.equal("unknown");
+				expect(joke).to.be.eql(testJoke);
+				done();
+			})
+		});
+	});
